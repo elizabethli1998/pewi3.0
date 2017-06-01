@@ -1175,7 +1175,7 @@ function showLevelDetails(value) {
   }
 
   //hide watershed feature legends
-  else if (value < -3) {
+  else if (value < -3 && value > -9) {
     var element = document.getElementsByClassName('physicalDetailsList');
     if (element.length > 0) {
       element[0].className = 'physicalDetailsListRolled';
