@@ -148,7 +148,11 @@ function addPlayer(givenPlayer) {
     } else {
       document.getElementById("rightPlayerCon").appendChild(tempPlayer);
     }
-    changeSelectedPaintTo(totalPlayers);
+    if(givenPlayer != undefined) {
+        changeSelectedPaintTo(givenPlayer);
+    } else {
+        changeSelectedPaintTo(totalPlayers);
+    }
   }
 }
 
@@ -353,7 +357,7 @@ function calculateResults() {
 
 //changeLandTypeTile changes the landType of a selected tile
 function changeLandTypeTile(tileId) {
-  if (document.getElementById("overlayContainer").style.visibility != "visible") {
+  if (document.getElementById("overlayContainer").style.visibility != "visible" && document.getElementById("combineButton").innerHTML != "Merge") {
     //Add tile to the undoArr
     if (!undo) {
       addChange(tileId);
@@ -604,11 +608,11 @@ function combinePlayers() {
       var painterElementId = "player" + playerCombo[i] + "Image";
       document.getElementById(painterElementId).className = "playerIcon icon";
     }
+    document.getElementById("combineButton").innerHTML = "Combine Players";
     if (playerCombo.length > 1) {
       combineMulti(playerCombo);
     }
     playerCombo = [];
-    document.getElementById("combineButton").innerHTML = "Combine Players";
     document.getElementById("genOverlay").style.visibility = "hidden";
     document.getElementById("painterTab-leftcol").style.zIndex = "auto";
     document.getElementById("painterTab-rightcol").style.zIndex = "auto";
@@ -700,10 +704,11 @@ function customMouseInput(buttonInput,drag) {
   var mY = parseFloat(buttonInput[5]);
   if(!drag) {
     var customMouse = new MouseEvent("mousedown", {button: 2, buttons: 2, clientX: inputX, clientY: inputY, layerX: 9, layerY: inputY, screenX: sX, screenY: sY, movementX: mX, movementY: mY});
+    document.getElementById('genOverlay').dispatchEvent(customMouse);
   } else {
     var customMouse = new MouseEvent("mousemove", {button: 0, buttons: 2, clientX: inputX, clientY: inputY, layerX: inputX, layerY: inputY, screenX: sX, screenY: sY, movementX: mX, movementY: mY});
+    window.dispatchEvent(customMouse);
   }
-  window.dispatchEvent(customMouse);
 } //end customMouseInput(buttonInput, drag)
 
 //Handles the delete button feature
@@ -1439,7 +1444,7 @@ function getHighlightedInfo(tileId) {
         if (boardData[currentBoard].map[tileId].strategicWetland == 1)
           highlightString = "Strategic Wetland" + "<br>";
         else
-          highlightString = "Non-Strategic Wetland" + "<br>";
+          highlightString = "Not A Strategic Wetland" + "<br>";
         break;
         //create string for subwatershed number
       case 7:
@@ -1798,11 +1803,13 @@ function multiplayerFileUpload(fileUploadEvent) {
 //multiplayerMode hides all unnecessary options from screen
 function multiplayerMode() {
   if (multiplayerAssigningModeOn) {
-
     document.getElementById("message").style.display = "block";
     //Don't add an aditional player if the level was only reset
     if (!resetting) {
-      addPlayer();
+      resetPlayers();
+      if(totalPlayers==0) {
+       addPlayer();
+      }
     } else {
       resetting = false;
     }
@@ -2099,7 +2106,7 @@ function onDocumentMouseUp(event) {
 
 //onDocumentKeyDown, listener with keyboard bindings
 function onDocumentKeyDown(event) {
-  if (!isSimRunning() || isSimRunning && !event.isTrusted) {
+  if (!isSimRunning() || isSimRunning && !event.isTrusted || event.keyCode == 27) {
     //switch structure on key code (http://keycode.info)
 
     // if (!event){
@@ -2228,12 +2235,16 @@ function onDocumentKeyDown(event) {
         }
         if (runningSim && !paused) {
           endSimPrompt();
+          document.getElementById('pausePlay').src = "imgs/playButton.png";
+          document.getElementById('pausePlay').style.width = '40px';
           break;
         }
         if (runningSim && paused) {
           document.getElementById("simContainer").style.visibility = "hidden";
           document.getElementById("genOverlay").style.visibility = "visible";
           resumeSim();
+          document.getElementById('pausePlay').src = "imgs/pauseButton.png";
+            document.getElementById('pausePlay').style.width = '20px';
           break;
         }
         break;
@@ -2264,11 +2275,7 @@ function onDocumentKeyDown(event) {
           clickTrackings = [];
           document.getElementById("recordIcon").style.visibility = "visible";
         } else {
-          curTracking = false;
-          //Ending date is recorded
-          endTime = new Date();
-          document.getElementById("recordIcon").style.visibility = "hidden";
-          exportTracking(clickTrackings);
+          continueTracking();
         }
         break;
         //no default handler
@@ -2280,6 +2287,19 @@ function onDocumentKeyDown(event) {
     } //end switch
   }
 } //end onDocumentKeyDown
+
+// Asks the user if they want to continue tracking...
+function continueTracking() {
+    if (confirm('Are you sure you want to stop your recording?')) {
+        curTracking = false;
+        //Ending date is recorded
+        endTime = new Date();
+        document.getElementById("recordIcon").style.visibility = "hidden";
+        exportTracking(clickTrackings);
+    } else {
+        // Do nothing! Continue with recording
+    }
+}
 
 //onDocumentKeyUp, binding to keyboard keyUp event
 //  but you already knew that...
@@ -2501,12 +2521,11 @@ function randomizeBoard() {
 
         undoGridPainters.push(boardData[currentBoard].map[i].landType[currentYear]);
         painter = randomPainterTile[Math.floor(Math.random() * randomPainterTile.length)];
-        //  console.log(painter);
         changeLandTypeTile(i);
       }
     } //end for all tiles
   }
-  //randomizing = false;
+  randomizing = false;
   painter = prevPainter;
   //Inserts the block of land use types into the undoArr
   insertChange();
@@ -2567,6 +2586,8 @@ function resetHotkeys() {
 function resetMultiPlayer() {
   //Eliminates all players except for player 1
   resetPlayers();
+  painter = 1;
+  changeSelectedPaintTo(painter);
   resetting = true;
   //Reloads the default multiplayer map
   parent.loadLevel(-1);
@@ -2674,6 +2695,26 @@ function resetPresets() {
   if(document.getElementById('flyover').style.display == 'block') {
     toggleCameraView();
   }
+  //Resets the camera angle
+  if (ToggleCam == 1){
+    changeCam2();
+    document.getElementById("flyover").innerHTML = "";
+    //Reseting camera 2 position when sandbox is reloaded
+    camera2.position.x = 70;
+    camera2.position.y = 25;
+    camera2.position.z = 244;
+    camera2.rotation.y = 0;
+  }
+  controls.reset();
+  //Resets topography
+  if(tToggle) {
+      tToggle = false;
+      refreshBoard();
+      setupRiver();
+  }
+  //Reset play/pause button toggle
+  document.getElementById('pausePlay').src = "imgs/pauseButton.png";
+  document.getElementById('pausePlay').style.width = "20px";
 } //end resetPresets()
 
 //Sets the slider for simulations
@@ -2995,18 +3036,12 @@ function saveAndRandomize() {
         break;
       }
     }
-
     for(var i = 1; i < boardData[currentBoard].calculatedToYear+1; i++) {
         for (var j = 0; j < boardData[currentBoard].map.length; j++) {
             //if tile exists
-            //Random tiles will keep getting added to the map as long as the tile exists
-            if ((boardData[currentBoard].map[j].landType[i] != LandUseType.none) && (randomizing == false)) {
+            //Change the land use for a tile if it was restricted
+            if ((boardData[currentBoard].map[j].landType[i] != LandUseType.none) && !randomPainterTile.includes(boardData[currentBoard].map[j].landType[i])) {
                 painter = newDefaultLandUse;
-                meshMaterials[j].map = textureArray[painter];
-                boardData[currentBoard].map[j].landType[i] = painter;
-                boardData[currentBoard].map[j].update(i);
-            } else if ((boardData[currentBoard].map[j].landType[i] != LandUseType.none)) {
-                painter = randomPainterTile[Math.floor(Math.random() * randomPainterTile.length)];
                 meshMaterials[j].map = textureArray[painter];
                 boardData[currentBoard].map[j].landType[i] = painter;
                 boardData[currentBoard].map[j].update(i);
@@ -3020,6 +3055,7 @@ function saveAndRandomize() {
     document.getElementById(painterElementId).className = "landSelectorIcon icon";
     //change the selected painter to the new default land use
     changeSelectedPaintTo(newDefaultLandUse);
+    refreshBoard();
   }
 } //end saveandRandomize
 
@@ -3627,7 +3663,7 @@ function toggleVisibility() {
       for (var i = 1; i <= 15; i++) {
         var string = "paint" + i;
         document.getElementById(string).style.display = "inline-block";
-      }   
+      }
   }
 
   document.getElementById('year1Button').style.display = "block";
@@ -3814,7 +3850,6 @@ function updateKeys() {
 
 //updatePrecip updates the currentBoard with the precipitation values selected in the drop down boxes
 function updatePrecip(year) {
-
   if (year == 0) {
     if (curTracking) {
       pushClick(0, getStamp(), 34, 0, document.getElementById("year0Precip").value);
@@ -3904,6 +3939,22 @@ function updateTime() {
   updateSlider(elapsedTime);
 } //end updateTime()
 
+//Toggles the pause/play button during user simulations
+function togglePausePlay() {
+    if(runningSim) {
+        if(document.getElementById('pausePlay').getAttribute('src') == "imgs/pauseButton.png") {
+            endSimPrompt();
+            document.getElementById('pausePlay').src = "imgs/playButton.png";
+            document.getElementById('pausePlay').style.width = '40px';
+        } else {
+            document.getElementById("simContainer").style.visibility = "hidden";
+            document.getElementById("genOverlay").style.visibility = "visible";
+            resumeSim();
+            document.getElementById('pausePlay').src = "imgs/pauseButton.png";
+            document.getElementById('pausePlay').style.width = '20px';
+        }
+    }
+}
 /**
 * This function first check the file type, and put them to process according to their file type
 * this function is called by uploadFile() in child frame uploadDownload.html
@@ -4088,7 +4139,6 @@ function uploadJSON(reader) {
 */
 function uploadCSV(reader) {
   //initData = [];
-
   reader.onload = function(e) {
     resetYearDisplay();
     setupBoardFromUpload(reader.result);
@@ -4102,8 +4152,8 @@ function uploadCSV(reader) {
 
     for (var i = 1; i < allTextLines.length; i++) {
       data = allTextLines[i].split(',');
-      if (data.length == headers.length) {
-
+      var headlength = headers.length-1;
+      if (data.length == headlength) {
         var tarr = [];
         for (var j = 0; j < headers.length; j++) {
           tarr.push(data[j]);

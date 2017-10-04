@@ -30,7 +30,7 @@ Cleaned and Prepared - July 2016 XXX
   <!-- INCLUDES -->
   <!--css-->
   <link rel="stylesheet" type="text/css" href="./frameStylesheet.css">
-  <link rel="stylesheet" type="text/css" href="./style_PrintOptions.css">
+  <link rel="stylesheet" type="text/css" href="./style_printOptions.css">
 
   <!--external fonts -->
   <link href='https://fonts.googleapis.com/css?family=Amatic+SC:700' rel='stylesheet' type='text/css'>
@@ -279,8 +279,8 @@ Cleaned and Prepared - July 2016 XXX
   -->
 
   <div class="print-options-content-holder">
+    <div id="closePDiv"><img id="closePrintOptions" onclick="parent.closePrintOptions();" src="../imgs/close_black.png"></div>
     <div id="optionsMainHolder">
-
       <div class="optionsHeader">
         <h4>Land Use Type Map</h4>
         <input id="year-toggle" onclick="toggleGroupCheckbox('year');" type="checkbox" style="display: none;">
@@ -600,13 +600,14 @@ Cleaned and Prepared - July 2016 XXX
 
     <iframe id="pdf_preview" class="pdf_preview" type="application/pdf" src=""></iframe>
   </div>
-
+<a href="doc/general.pdf">General Index Document</a>
   <div>
     <div id="" class="mainButton preview-btn" onclick="saveCurrentPrintOptions(0);">Preview PDF</div>
     <div id="" class="mainButton print-btn" onclick="downloadControl();">Download</div>
     <div id="" class="mainButton exit-btn" onclick="parent.closePrintOptions();">Exit</div>
+    <div id="" class="mainButton pdf-btn" onclick="window.open('../doc/general.pdf');">General Glossary PDF</div>
+    <div id="" class="mainButton advpdf-btn" onclick="window.open('../doc/advanced.pdf');">Advanced Glossary PDF</div>
   </div>
 
 </body>
-
 </html>
